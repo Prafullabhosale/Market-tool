@@ -49,7 +49,7 @@ prev_ema50 = prev["EMA50"].item()
 # -------------------------------
 if ema20 > ema50 > ema200:
     trend = "🔥 Strong Bullish"
-elif latest["EMA20"] < latest["EMA50"] < latest["EMA200"]:
+elif ema20 < ema50 < ema200:
     trend = "❄️ Strong Bearish"
 else:
     trend = "⚖️ Sideways"
@@ -59,7 +59,7 @@ else:
 # -------------------------------
 if prev_ema20 < prev_ema50 and ema20 > ema50:
     signal = "🟢 BUY Signal"
-elif prev["EMA20"] > prev["EMA50"] and latest["EMA20"] < latest["EMA50"]:
+if prev_ema20 > prev_ema50 and ema20 < ema50:
     signal = "🔴 SELL Signal"
 else:
     signal = "⏳ No Fresh Signal"
