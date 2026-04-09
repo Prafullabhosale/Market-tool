@@ -1,48 +1,101 @@
 import streamlit as st
 import yfinance as yf
+import pandas as pd
+import plotly.graph_objects as go
 
-st.set_page_config(page_title="Personal Market Guide", layout="centered")
-st.title("📈 Personal Market Guide")
+st.set_page_config(page_title="Trading Assistant", layout="wide")
 
-def get_trend(symbol):
-    data = yf.download(symbol, period="3mo", interval="1d") 
-    data["EMA20"] = data["Close"].ewm(span=20, adjust=False).mean() 
-    data["EMA50"] = data["Close"].ewm(span=50, adjust=False).mean()
-    data["EMA200"] = data["Close"].ewm(span=200, adjust=False).mean()
+st.title("📈 Smart Trading Assistant")
 
-    # If no data
-    if data.empty:
-        return "No Data", "N/A"
+# -------------------------------
+# INPUT
+# -------------------------------
+symbol = st.text_input("Enter Stock Symbol (Example: ^NSEI, RELIANCE.NS)", "^NSEI")
 
-    data["EMA50"] = data["Close"].ewm(span=50).mean()
-    latest = data.iloc[-1]
+# -------------------------------
+# FETCH DATA
+# -------------------------------
+@st.cache_data
+def load_data(symbol):
+    data = yf.download(symbol, period="6mo", interval="1d")
+    return data
 
-    try:
-        close_price = float(latest["Close"])
-        ema50 = float(latest["EMA50"])
-    except:
-        return "Data Error", "N/A"
+data = load_data(symbol)
 
-    if close_price > ema50:
-        trend = "Bullish"
-    else:
-        trend = "Bearish"
+if data.empty:
+    st.error("No data found. Check symbol.")
+    st.stop()
 
-    return trend, round(close_price, 2)
+# -------------------------------
+# EMA CALCULATIONS
+# -------------------------------
+price_col = "Close" if "Close" in data.columns else "Adj Close"
 
-# Fetch trends
-nifty_trend, nifty_price = get_trend("^NSEI")
-bank_trend, bank_price = get_trend("^NSEBANK")
+data["EMA20"] = data[price_col].ewm(span=20, adjust=False).mean()
+data["EMA50"] = data[price_col].ewm(span=50, adjust=False).mean()
+data["EMA200"] = data[price_col].ewm(span=200, adjust=False).mean()
 
-st.subheader("📊 Index Trends")
-st.metric("Nifty", nifty_trend, nifty_price)
-st.metric("Bank Nifty", bank_trend, bank_price)
+latest = data.iloc[-1]
+prev = data.iloc[-2]
 
-if nifty_trend == "Bullish":
-    st.success("Market Bias: Buy on dips")
-elif nifty_trend == "Bearish":
-    st.warning("Market Bias: Trade cautiously")
+# -------------------------------
+# TREND DETECTION
+# -------------------------------
+if latest["EMA20"] > latest["EMA50"] > latest["EMA200"]:
+    trend = "🔥 Strong Bullish"
+elif latest["EMA20"] < latest["EMA50"] < latest["EMA200"]:
+    trend = "❄️ Strong Bearish"
 else:
-    st.info("Market data unavailable")
+    trend = "⚖️ Sideways"
 
-st.info("⚠️ Educational purpose only")
+# -------------------------------
+# SIGNAL DETECTION (CROSSOVER)
+# -------------------------------
+if prev["EMA20"] < prev["EMA50"] and latest["EMA20"] > latest["EMA50"]:
+    signal = "🟢 BUY Signal"
+elif prev["EMA20"] > prev["EMA50"] and latest["EMA20"] < latest["EMA50"]:
+    signal = "🔴 SELL Signal"
+else:
+    signal = "⏳ No Fresh Signal"
+
+# -------------------------------
+# STRENGTH
+# -------------------------------
+ema_gap = abs(latest["EMA20"] - latest["EMA50"])
+
+if ema_gap > 50:
+    strength = "💪 Strong"
+elif ema_gap > 20:
+    strength = "👍 Moderate"
+else:
+    strength = "⚠️ Weak"
+
+# -------------------------------
+# DISPLAY METRICS
+# -------------------------------
+col1, col2, col3, col4 = st.columns(4)
+
+col1.metric("Price", round(latest[price_col], 2))
+col2.metric("Trend", trend)
+col3.metric("Signal", signal)
+col4.metric("Strength", strength)
+
+# -------------------------------
+# CHART
+# -------------------------------
+fig = go.Figure()
+
+fig.add_trace(go.Scatter(x=data.index, y=data[price_col], name="Price"))
+fig.add_trace(go.Scatter(x=data.index, y=data["EMA20"], name="EMA20"))
+fig.add_trace(go.Scatter(x=data.index, y=data["EMA50"], name="EMA50"))
+fig.add_trace(go.Scatter(x=data.index, y=data["EMA200"], name="EMA200"))
+
+fig.update_layout(title=f"{symbol} Price & EMAs", xaxis_title="Date", yaxis_title="Price")
+
+st.plotly_chart(fig, use_container_width=True)
+
+# -------------------------------
+# DATA TABLE
+# -------------------------------
+with st.expander("📊 Show Data"):
+    st.dataframe(data.tail(20))
