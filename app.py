@@ -38,10 +38,16 @@ data["EMA200"] = data[price_col].ewm(span=200, adjust=False).mean()
 latest = data.iloc[-1]
 prev = data.iloc[-2]
 
+ema20 = float(latest["EMA20"])
+ema50 = float(latest["EMA50"])
+ema200 = float(latest["EMA200"])
+
+prev_ema20 = float(prev["EMA20"])
+prev_ema50 = float(prev["EMA50"])
 # -------------------------------
 # TREND DETECTION
 # -------------------------------
-if latest["EMA20"] > latest["EMA50"] > latest["EMA200"]:
+if ema20 > ema50 > ema200:
     trend = "🔥 Strong Bullish"
 elif latest["EMA20"] < latest["EMA50"] < latest["EMA200"]:
     trend = "❄️ Strong Bearish"
@@ -51,7 +57,7 @@ else:
 # -------------------------------
 # SIGNAL DETECTION (CROSSOVER)
 # -------------------------------
-if prev["EMA20"] < prev["EMA50"] and latest["EMA20"] > latest["EMA50"]:
+if prev_ema20 < prev_ema50 and ema20 > ema50:
     signal = "🟢 BUY Signal"
 elif prev["EMA20"] > prev["EMA50"] and latest["EMA20"] < latest["EMA50"]:
     signal = "🔴 SELL Signal"
