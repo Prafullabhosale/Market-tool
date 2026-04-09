@@ -67,7 +67,7 @@ else:
 # -------------------------------
 # STRENGTH
 # -------------------------------
-ema_gap = abs(latest["EMA20"] - latest["EMA50"])
+ema_gap = abs(ema20 - ema50)
 
 if ema_gap > 50:
     strength = "💪 Strong"
