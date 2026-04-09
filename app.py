@@ -38,12 +38,12 @@ data["EMA200"] = data[price_col].ewm(span=200, adjust=False).mean()
 latest = data.iloc[-1]
 prev = data.iloc[-2]
 
-ema20 = float(latest["EMA20"])
-ema50 = float(latest["EMA50"])
-ema200 = float(latest["EMA200"])
+ema20 = latest["EMA20"].item()
+ema50 = latest["EMA50"].item()
+ema200 = latest["EMA200"].item()
 
-prev_ema20 = float(prev["EMA20"])
-prev_ema50 = float(prev["EMA50"])
+prev_ema20 = prev["EMA20"].item()
+prev_ema50 = prev["EMA50"].item()
 # -------------------------------
 # TREND DETECTION
 # -------------------------------
