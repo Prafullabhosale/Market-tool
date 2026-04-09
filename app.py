@@ -5,7 +5,9 @@ st.set_page_config(page_title="Personal Market Guide", layout="centered")
 st.title("📈 Personal Market Guide")
 
 def get_trend(symbol):
-    data = yf.download(symbol, period="3mo", interval="1d")
+    data = yf.download(symbol, period="3mo", interval="1d") 
+    data["EMA20"] = data["Close"].ewm(span=20, adjust=False).mean()
+    data["EMA200"] = data["Close"].ewm(span=200, adjust=False).mean()
 
     # If no data
     if data.empty:
